@@ -147,7 +147,7 @@ export default function ChatRoom() {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Digite uma mensagem..."
-            className="flex-1 bg-slate-100 border-none rounded-full px-5 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            className="flex-1 bg-slate-100 border-none rounded-full px-5 py-3 text-sm text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           />
           <button 
             type="submit" 

@@ -169,7 +169,7 @@ export default async function ArtigoPage({ params }: { params: Promise<{ slug: s
       </div>
 
       <main className="container mx-auto px-4 md:px-6 max-w-3xl">
-        <article className="bg-white rounded-[2rem] border-2 border-black p-6 md:p-10 lg:p-12 shadow-[0px_8px_0px_rgba(0,0,0,1)] flex flex-col gap-8 mb-12">
+        <article className="bg-white rounded-[2rem] border-2 border-black p-6 md:p-10 lg:p-12 shadow-sm flex flex-col gap-8 mb-12">
           
           <header className="flex flex-col gap-6 border-b-2 border-slate-100 pb-8">
             {/* ✨ break-words adicionado aqui no título por precaução */}

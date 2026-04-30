@@ -248,39 +248,47 @@ export default async function AtividadePage({ params }: { params: Promise<{ mate
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           
           <div className="flex-1 space-y-6 flex flex-col">
-            <div className="order-1 bg-white rounded-3xl border-2 border-black p-5 md:p-8 space-y-6 shadow-sm">
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-snug">
-                  {atividade.titulo}
-                </h1>
-                <div className="flex items-center gap-3">
-                  <BotaoFavorito slug={slug} titulo={atividade.titulo} imagem={imagemCapa} materia={materia} variante="minimalista" tipo="atividades" />
-                  <a href="#comentarios" className="w-12 h-12 flex items-center justify-center border-2 border-black rounded-full text-black hover:bg-slate-100 transition-colors active:scale-95" title="Ver comentários">
-                    <span className="material-symbols-outlined font-bold text-xl">chat_bubble</span>
-                  </a>
-                  <BotaoCompartilhar titulo={atividade.titulo} variante="minimalista" />
+            
+            {/* 🌟 NOVO CONTAINER UNIFICADO (Postagem + Descrição) 🌟 */}
+            <div className="order-1 bg-white rounded-3xl border-2 border-black shadow-sm flex flex-col overflow-hidden">
+              
+              {/* Parte 1: Cabeçalho e Imagem */}
+              <div className="p-5 md:p-8 space-y-6">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
+                  <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-snug">
+                    {atividade.titulo}
+                  </h1>
+                  <div className="flex items-center gap-3">
+                    <BotaoFavorito slug={slug} titulo={atividade.titulo} imagem={imagemCapa} materia={materia} variante="minimalista" tipo="atividades" />
+                    <a href="#comentarios" className="w-12 h-12 flex items-center justify-center border-2 border-black rounded-full text-black hover:bg-slate-100 transition-colors active:scale-95" title="Ver comentários">
+                      <span className="material-symbols-outlined font-bold text-xl">chat_bubble</span>
+                    </a>
+                    <BotaoCompartilhar titulo={atividade.titulo} variante="minimalista" />
+                  </div>
                 </div>
+
+                <div className="relative border-2 border-black rounded-2xl overflow-hidden bg-slate-100">
+                  <CarrosselImagens imagens={atividade.imagens} titulo={atividade.titulo} />
+                </div>
+
+                {/* Botão de Download na versão Mobile */}
+                {urlDownload && (
+                  <div className="flex justify-center mt-4 lg:hidden">
+                    <BotaoDownload urlParaDownload={urlDownload} titulo={atividade.titulo} isPdf={ehPdf} />
+                  </div>
+                )}
               </div>
 
-              <div className="relative border-2 border-black rounded-2xl overflow-hidden bg-slate-100">
-                <CarrosselImagens imagens={atividade.imagens} titulo={atividade.titulo} />
+              {/* Parte 2: Descrição (Agora dentro do mesmo bloco) */}
+              <div className="p-5 md:p-8 border-t-2 border-slate-100 bg-white">
+                <h3 className="font-extrabold text-xl mb-6 text-black border-b-2 border-slate-100 pb-3">Descrição</h3>
+                <div 
+                  className="prose prose-slate max-w-none prose-headings:font-bold prose-headings:text-black prose-p:leading-relaxed text-slate-700 text-sm md:text-base"
+                  dangerouslySetInnerHTML={{ __html: atividade.contentHtml || "" }} 
+                />
               </div>
-
-              {/* Botão de Download na versão Mobile (Aparece se tiver PDF ou Imagem) */}
-              {urlDownload && (
-                <div className="flex justify-center mt-4 lg:hidden">
-                  <BotaoDownload urlParaDownload={urlDownload} titulo={atividade.titulo} isPdf={ehPdf} />
-                </div>
-              )}
             </div>
-
-            <div className="order-2 bg-white rounded-3xl border-2 border-black p-6 md:p-8 shadow-sm">
-              <h3 className="font-extrabold text-xl mb-6 text-black border-b-2 border-slate-100 pb-3">Descrição</h3>
-              <div 
-                className="prose prose-slate max-w-none prose-headings:font-bold prose-headings:text-black prose-p:leading-relaxed text-slate-700 text-sm md:text-base"
-                dangerouslySetInnerHTML={{ __html: atividade.contentHtml || "" }} 
-              />
-            </div>
+            {/* 🌟 FIM DO CONTAINER UNIFICADO 🌟 */}
 
             <CartaoAutor className="order-3 lg:hidden" />
             <CartaoDetalhes className="order-4 lg:hidden" />

@@ -42,12 +42,13 @@ export default function CarrosselImagens({ imagens, titulo }: { imagens: string[
     <>
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-slate-200">
         <div 
-          className="relative w-full pt-[141.42%] rounded-md overflow-hidden shadow-inner bg-slate-100 cursor-zoom-in group border border-slate-200"
+          className="relative w-full flex justify-center items-center rounded-md overflow-hidden cursor-zoom-in group border border-slate-200 bg-white shadow-sm"
           onClick={() => setIsLightboxOpen(true)}
         >
           <img 
             src={imagens[paginaAtual]} 
-            className="absolute top-0 left-0 w-full h-full object-contain p-2 transition-opacity duration-300" 
+            className="w-full h-auto max-h-[75vh] object-contain transition-opacity duration-300" 
+            alt="Imagem da postagem"
           />
           
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center pointer-events-none">

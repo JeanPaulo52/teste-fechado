@@ -153,41 +153,46 @@ export default async function PaginaMomento({ params }: { params: Promise<{ id: 
           {/* Lado Esquerdo (Conteúdo Principal) */}
           <div className="flex-1 space-y-6 flex flex-col">
             
-            {/* Bloco de Imagens e Ações */}
-            <div className="order-1 bg-white rounded-3xl border-2 border-black p-5 md:p-8 space-y-6 shadow-sm">
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-snug">
-                  {tituloPostagem}
-                </h1>
-                
-                {/* Seus botões de ação! */}
-                <div className="flex items-center gap-3">
-                  <BotaoFavorito slug={postagem.id || ""} titulo={tituloPostagem} imagem={imagemCapa} materia="gerais" variante="minimalista" tipo="momentos" />
-                  <a href="#comentarios" className="w-12 h-12 flex items-center justify-center border-2 border-black rounded-full text-black hover:bg-slate-100 transition-colors active:scale-95" title="Ver comentários">
-                    <span className="material-symbols-outlined font-bold text-xl">chat_bubble</span>
-                  </a>
-                  <BotaoCompartilhar titulo={tituloPostagem} variante="minimalista" />
+            {/* 🌟 NOVO CONTAINER UNIFICADO (Postagem + Descrição) 🌟 */}
+            <div className="order-1 bg-white rounded-3xl border-2 border-black shadow-sm flex flex-col overflow-hidden">
+              
+              {/* Parte 1: Cabeçalho e Imagens */}
+              <div className="p-5 md:p-8 space-y-6">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
+                  <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-snug">
+                    {tituloPostagem}
+                  </h1>
+                  
+                  {/* Seus botões de ação! */}
+                  <div className="flex items-center gap-3">
+                    <BotaoFavorito slug={postagem.id || ""} titulo={tituloPostagem} imagem={imagemCapa} materia="gerais" variante="minimalista" tipo="momentos" />
+                    <a href="#comentarios" className="w-12 h-12 flex items-center justify-center border-2 border-black rounded-full text-black hover:bg-slate-100 transition-colors active:scale-95" title="Ver comentários">
+                      <span className="material-symbols-outlined font-bold text-xl">chat_bubble</span>
+                    </a>
+                    <BotaoCompartilhar titulo={tituloPostagem} variante="minimalista" />
+                  </div>
                 </div>
+
+                {/* Só mostra o carrossel se a postagem tiver imagens */}
+                {postagem.imagens.length > 0 && (
+                  <div className="relative border-2 border-black rounded-2xl overflow-hidden bg-slate-100">
+                    <CarrosselImagens imagens={postagem.imagens} titulo={tituloPostagem} />
+                  </div>
+                )}
               </div>
 
-              {/* Só mostra o carrossel se a postagem tiver imagens */}
-              {postagem.imagens.length > 0 && (
-                <div className="relative border-2 border-black rounded-2xl overflow-hidden bg-slate-100">
-                  <CarrosselImagens imagens={postagem.imagens} titulo={tituloPostagem} />
+              {/* Parte 2: Bloco de Descrição (Texto) */}
+              {postagem.contentHtml && (
+                <div className="p-5 md:p-8 border-t-2 border-slate-100 bg-white">
+                  <h3 className="font-extrabold text-xl mb-6 text-black border-b-2 border-slate-100 pb-3">Descrição</h3>
+                  <div 
+                    className="prose prose-slate max-w-none prose-headings:font-bold prose-headings:text-black prose-p:leading-relaxed text-slate-700 text-sm md:text-base"
+                    dangerouslySetInnerHTML={{ __html: postagem.contentHtml }} 
+                  />
                 </div>
               )}
             </div>
-
-            {/* Bloco de Descrição (Texto) */}
-            {postagem.contentHtml && (
-              <div className="order-2 bg-white rounded-3xl border-2 border-black p-6 md:p-8 shadow-sm">
-                <h3 className="font-extrabold text-xl mb-6 text-black border-b-2 border-slate-100 pb-3">Descrição</h3>
-                <div 
-                  className="prose prose-slate max-w-none prose-headings:font-bold prose-headings:text-black prose-p:leading-relaxed text-slate-700 text-sm md:text-base"
-                  dangerouslySetInnerHTML={{ __html: postagem.contentHtml }} 
-                />
-              </div>
-            )}
+            {/* 🌟 FIM DO CONTAINER UNIFICADO 🌟 */}
 
             {/* Cartão do Autor no Mobile */}
             <CartaoAutor className="order-3 lg:hidden" />
@@ -203,7 +208,6 @@ export default async function PaginaMomento({ params }: { params: Promise<{ id: 
           <aside className="hidden lg:block lg:w-[320px] xl:w-[360px] flex-shrink-0">
             <div className="sticky top-28 space-y-6">
               <CartaoAutor />
-              {/* O CartaoDetalhes foi removido daqui a seu pedido! */}
             </div>
           </aside>
 

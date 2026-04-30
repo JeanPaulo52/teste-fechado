@@ -189,7 +189,7 @@ export default function Comentarios({ slug, tipo }: { slug: string, tipo: 'ativi
               value={novoComentario}
               onChange={(e) => setNovoComentario(e.target.value)}
               placeholder="Escreva algo..."
-              className="w-full p-4 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] text-sm"
+              className="w-full p-4 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] text-sm text-slate-900 placeholder-slate-400 bg-white"
               disabled={enviando}
             />
             <button type="submit" disabled={enviando || !novoComentario.trim()} className="self-end bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">
