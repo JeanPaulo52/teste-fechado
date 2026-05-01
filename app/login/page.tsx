@@ -7,7 +7,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -20,6 +21,26 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // FUNÇÃO AUXILIAR PARA CRIAR PERFIL SE NÃO EXISTIR (RESGATE)
+  const assegurarPerfilNoFirestore = async (user: any) => {
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      // Se não existe, cria agora (Resgate de conta antiga ou Google novo)
+      const nomeProvisorio = user.displayName || (user.email ? user.email.split('@')[0] : "Usuário");
+      
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email,
+        displayName: nomeProvisorio,
+        photoURL: user.photoURL || "",
+        createdAt: serverTimestamp()
+      });
+      console.log("Perfil assegurado no Firestore com sucesso!");
+    }
+  };
+
   // LOGIN POR E-MAIL E SENHA
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -28,14 +49,21 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        // Faz login
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // ✨ Tenta resgatar se for conta antiga
+        await assegurarPerfilNoFirestore(userCredential.user);
       } else {
         if (password.length < 6) {
           setError('A senha deve ter pelo menos 6 caracteres.');
           setLoading(false);
           return;
         }
-        await createUserWithEmailAndPassword(auth, email, password);
+        
+        // Cria usuário novo
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Cria perfil no Firestore
+        await assegurarPerfilNoFirestore(userCredential.user);
       }
       router.push('/');
     } catch (err: any) {
@@ -56,8 +84,12 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.push('/'); // Manda para a Home se der certo
+      const userCredential = await signInWithPopup(auth, provider);
+      
+      // ✨ Assegura que o perfil exista (resgata se for usuário antigo do Google)
+      await assegurarPerfilNoFirestore(userCredential.user);
+
+      router.push('/'); 
     } catch (err: any) {
       console.error(err);
       setError("Erro ao entrar com o Google. Tente novamente.");
@@ -119,21 +151,18 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* DIVISOR */}
           <div className="mt-6 flex items-center justify-center space-x-3">
             <span className="h-px bg-slate-200 w-full"></span>
             <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">ou</span>
             <span className="h-px bg-slate-200 w-full"></span>
           </div>
 
-          {/* BOTÃO DO GOOGLE */}
           <button 
             type="button" 
             onClick={handleGoogleLogin}
             disabled={loading}
             className="mt-6 w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3.5 rounded-xl shadow-sm transition-all hover:-translate-y-0.5"
           >
-            {/* Ícone do Google */}
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -151,7 +180,6 @@ export default function LoginPage() {
             )}
           </div>
         </div>
-        
       </div>
     </div>
   );

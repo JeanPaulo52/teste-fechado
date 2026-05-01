@@ -57,19 +57,8 @@ export default function CatalogoArtigosPage() {
   return (
     <div className="bg-slate-50 min-h-screen pb-16">
       
-      {/* NAVEGAÇÃO E CABEÇALHO */}
-      <div className="container mx-auto px-4 md:px-6 pt-8 pb-4 text-sm text-slate-500 max-w-7xl">
-        <Link href="/" className="hover:text-blue-600 transition-colors">Início</Link> <span className="mx-2">&gt;</span>
-        <span className="font-medium text-slate-800">Artigos</span>
-      </div>
-
       <div className="container mx-auto px-4 md:px-6 pt-6 pb-8">
-        <h1 className="text-3xl md:text-5xl font-black text-gray-900 text-center mb-4">
-          Artigos e Reflexões
-        </h1>
-        <p className="text-slate-500 text-center text-lg max-w-2xl mx-auto mb-12">
-          Leituras selecionadas para inspirar sua prática pedagógica.
-        </p>
+        
 
         {/* GRADE DE ARTIGOS */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto">

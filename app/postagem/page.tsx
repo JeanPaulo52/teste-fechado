@@ -7,12 +7,18 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
+// Importando o nosso componente de Toast (Notificação)
+import Toast from '../components/Toast';
+
 export default function CriarMomento() {
   const [user, setUser] = useState<User | null>(null);
   const [descricao, setDescricao] = useState("");
   const [arquivos, setArquivos] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [enviando, setEnviando] = useState(false);
+  
+  // Estado para controlar os nossos balões de aviso
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
   
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,7 +30,7 @@ export default function CriarMomento() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
-        alert("Você precisa estar logado para compartilhar um momento!");
+        // Se não tiver logado, manda pro login/início
         router.push('/');
       }
       setUser(currentUser);
@@ -56,12 +62,12 @@ export default function CriarMomento() {
     if (lockEnvio.current) return;
     
     if (!user || !descricao) {
-      alert("Por favor, escreva uma descrição para o seu momento!");
+      setToast({ message: "Por favor, escreva uma descrição para o seu momento!", type: "error" });
       return;
     }
 
     if (arquivos.length === 0) {
-      alert("Por favor, adicione pelo menos uma foto!");
+      setToast({ message: "Por favor, adicione pelo menos uma foto!", type: "error" });
       return;
     }
 
@@ -94,12 +100,17 @@ export default function CriarMomento() {
         comentariosCount: 0
       });
 
-      alert("Momento compartilhado com sucesso!");
-      router.push('/'); 
+      // Aciona o balão de sucesso!
+      setToast({ message: "Momento compartilhado com sucesso!", type: "success" });
+      
+      // Espera 1.5 segundos (para dar tempo de ver a notificação) e redireciona
+      setTimeout(() => {
+        router.push('/'); 
+      }, 1500);
       
     } catch (error) {
       console.error("Erro ao salvar momento:", error);
-      alert("Ocorreu um erro ao compartilhar o momento.");
+      setToast({ message: "Ocorreu um erro ao compartilhar o momento.", type: "error" });
       // Se der erro, destrava para o usuário tentar novamente
       lockEnvio.current = false;
       setEnviando(false);
@@ -107,7 +118,7 @@ export default function CriarMomento() {
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen font-sans">
+    <div className="bg-slate-50 min-h-screen font-sans relative">
       {/* Cabeçalho */}
       <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-10">
         <div className="container mx-auto max-w-2xl flex items-center justify-between">
@@ -211,6 +222,15 @@ export default function CriarMomento() {
           </div>
         </form>
       </main>
+
+      {/* RENDERIZA O TOAST */}
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 }

@@ -6,6 +6,10 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import Link from 'next/link';
 
+// Importando nossos componentes personalizados
+import Toast from './Toast';
+import ConfirmModal from './ConfirmModal';
+
 export default function MinhasPostagens({ perfilId, nomeUsuario }: { perfilId: string, nomeUsuario: string }) {
   const [atividades, setAtividades] = useState<any[]>([]);
   const [artigos, setArtigos] = useState<any[]>([]);
@@ -13,6 +17,10 @@ export default function MinhasPostagens({ perfilId, nomeUsuario }: { perfilId: s
   const [loading, setLoading] = useState(true);
   const [usuarioAtual, setUsuarioAtual] = useState<any>(null);
   const [abaAtiva, setAbaAtiva] = useState<'atividades' | 'artigos' | 'momentos'>('atividades');
+
+  // Estados para os Alertas e Modais
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string, colecaoNome: string, tipo: string } | null>(null);
 
   useEffect(() => {
     const auth = getAuth();
@@ -60,14 +68,31 @@ export default function MinhasPostagens({ perfilId, nomeUsuario }: { perfilId: s
     }
   };
 
-  const handleExcluir = async (id: string, colecaoNome: string, tipo: string) => {
-    if (!window.confirm("Excluir permanentemente?")) return;
+  // Função que apenas abre o modal
+  const handleExcluir = (id: string, colecaoNome: string, tipo: string) => {
+    setItemToDelete({ id, colecaoNome, tipo });
+  };
+
+  // Função que realmente exclui quando o usuário confirma
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    
+    const { id, colecaoNome, tipo } = itemToDelete;
+
     try {
       await deleteDoc(doc(db, colecaoNome, id));
+      
       if (tipo === 'atividade') setAtividades(prev => prev.filter(p => p.id !== id));
       if (tipo === 'artigo') setArtigos(prev => prev.filter(p => p.id !== id));
       if (tipo === 'momento') setMomentos(prev => prev.filter(p => p.id !== id));
-    } catch (e) { console.error(e); }
+      
+      setToast({ message: "Postagem excluída com sucesso!", type: "info" });
+    } catch (e) { 
+      console.error(e); 
+      setToast({ message: "Erro ao excluir postagem.", type: "error" });
+    } finally {
+      setItemToDelete(null); // Fecha o modal após a ação
+    }
   };
 
   const renderGrid = (lista: any[]) => {
@@ -91,11 +116,15 @@ export default function MinhasPostagens({ perfilId, nomeUsuario }: { perfilId: s
           return (
             <div key={post.id} className="bg-white border-2 border-slate-100 rounded-2xl overflow-hidden shadow-sm group relative hover:border-slate-300 transition-all">
               {usuarioAtual?.uid === perfilId && (
-                <button onClick={() => handleExcluir(post.id, post.colecaoNome, post.tipo)} className="absolute top-3 right-3 bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 z-20">
+                <button 
+                  onClick={() => handleExcluir(post.id, post.colecaoNome, post.tipo)} 
+                  className="absolute top-3 right-3 bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 z-20 shadow-md hover:bg-red-700 transition-colors"
+                  title="Excluir Postagem"
+                >
                   <span className="material-symbols-outlined text-sm">delete</span>
                 </button>
               )}
-              <Link href={linkDestino} className="block h-40 bg-slate-100 overflow-hidden">
+              <Link href={linkDestino} className="block h-40 bg-slate-100 overflow-hidden relative">
                 <img src={imagemCapa || `https://placehold.co/600x400?text=${post.tipo}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
               </Link>
               <div className="p-4">
@@ -117,7 +146,7 @@ export default function MinhasPostagens({ perfilId, nomeUsuario }: { perfilId: s
   if (loading) return <div className="text-center py-10 font-bold text-slate-400">Carregando conteúdos...</div>;
 
   return (
-    <div className="mt-12">
+    <div className="mt-12 relative">
       {/* Navegação por Abas */}
       <div className="flex flex-wrap gap-2 mb-8 border-b border-slate-100 pb-4">
         {[
@@ -136,7 +165,7 @@ export default function MinhasPostagens({ perfilId, nomeUsuario }: { perfilId: s
           >
             <span className="material-symbols-outlined text-lg">{tab.icon}</span>
             {tab.label}
-            <span className={`ml-1 px-2 py-0.5 rounded-md text-[10px] ${abaAtiva === tab.id ? 'bg-blue-500' : 'bg-slate-100 text-slate-400'}`}>
+            <span className={`ml-1 px-2 py-0.5 rounded-md text-[10px] ${abaAtiva === tab.id ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
               {tab.count}
             </span>
           </button>
@@ -149,6 +178,26 @@ export default function MinhasPostagens({ perfilId, nomeUsuario }: { perfilId: s
         {abaAtiva === 'artigos' && renderGrid(artigos)}
         {abaAtiva === 'momentos' && renderGrid(momentos)}
       </div>
+
+      {/* RENDERIZA O MODAL DE CONFIRMAÇÃO */}
+      <ConfirmModal 
+        isOpen={itemToDelete !== null}
+        title="Excluir Permanentemente?"
+        message="Tem certeza de que deseja excluir esta postagem? Essa ação não poderá ser desfeita e os dados serão perdidos para sempre."
+        confirmText="Sim, Excluir"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
+
+      {/* RENDERIZA O TOAST */}
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 }

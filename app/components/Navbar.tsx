@@ -18,17 +18,12 @@ export default function Navbar() {
   
   // Estado de Notificações
   const [unreadCount, setUnreadCount] = useState(0);
-  
-  // Estado do Menu Mobile
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    // Fica escutando se o usuário logou ou deslogou
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {
-        // 1. Busca a foto em tempo real no Firestore
         const userRef = doc(db, "users", currentUser.uid);
         const unsubscribeDoc = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
@@ -37,7 +32,6 @@ export default function Navbar() {
           setLoading(false);
         });
 
-        // 2. Busca notificações não lidas em tempo real
         const notifQuery = query(
           collection(db, "users", currentUser.uid, "notifications"),
           where("lida", "==", false)
@@ -46,7 +40,6 @@ export default function Navbar() {
           setUnreadCount(snap.docs.length);
         });
 
-        // Limpa os escutadores quando deslogar ou mudar de tela
         return () => {
           unsubscribeDoc();
           unsubscribeNotif();
@@ -61,204 +54,177 @@ export default function Navbar() {
     return () => unsubscribeAuth();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push("/login");
-      setIsMobileMenuOpen(false);
-    } catch (error) {
-      console.error("Erro ao sair:", error);
-    }
-  };
-
   return (
-    <header className="bg-white shadow-sm border-b border-slate-100 sticky top-0 z-50">
-      <nav className="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+    <>
+      {/* =========================================================
+          HEADER FIXO NO TOPO (DESKTOP E ELEMENTOS DO TOPO MOBILE)
+          ========================================================= */}
+      <header className="bg-white/85 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-b border-slate-200/60 sticky top-0 z-50 transition-all duration-300">
         
-        {/* LOGO */}
-        <Link href="/" className="text-lg sm:text-2xl font-extrabold">
-          <span className="text-red-600">Atividade</span>
-          <span className="text-blue-600">Adaptada</span>
-          <span className="text-slate-900">.com</span>
-        </Link>
+        {/* NAVEGAÇÃO DESKTOP (Escondida no celular) */}
+        <nav className="hidden md:flex container mx-auto px-4 sm:px-6 py-3 justify-between items-center">
+          {/* LOGO */}
+          <Link href="/" className="text-2xl font-extrabold tracking-tight hover:opacity-80 transition-opacity">
+            <span className="text-red-600">Atividade</span>
+            <span className="text-blue-600">Adaptada</span>
+            <span className="text-slate-900">.com</span>
+          </Link>
 
-        {/* LINKS DESKTOP (Escondido no celular) */}
-        <div className="hidden md:flex items-center space-x-6">
-          <Link href="/" className="font-bold text-blue-600 hover:text-blue-700 transition">Início</Link>
-          <Link href="/atividades" className="text-slate-600 hover:text-blue-600 transition font-medium">Atividades</Link>
-          <Link href="/artigos" className="text-slate-600 hover:text-blue-600 transition font-medium">Artigos</Link>
-          <BotaoNovoPost />
-        </div>
-
-        {/* ÁREA DO USUÁRIO DESKTOP */}
-        <div className="hidden md:flex items-center gap-4">
-          
-          {/* BARRA DE PESQUISA NO DESKTOP */}
-          <BarraPesquisa />
-
-          {loading ? (
-            <div className="w-10 h-10 bg-slate-200 animate-pulse rounded-full"></div>
-          ) : user ? (
-            // MOSTRA ÍCONES E A FOTO SE ESTIVER LOGADO
-            <div className="flex items-center gap-4">
-              
-              {/* BOTÃO DE NOTIFICAÇÕES (Sininho) */}
-              <Link 
-                href="/notificacoes" 
-                className="text-slate-400 hover:text-blue-600 transition-colors flex items-center relative group" 
-                title="Notificações"
-              >
-                <span className="material-symbols-outlined text-[26px] group-hover:scale-110 transition-transform">
-                  notifications
-                </span>
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-white">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </Link>
-
-              {/* BOTÃO DE MENSAGENS */}
-              <Link 
-                href="/mensagens" 
-                className="text-slate-400 hover:text-blue-600 transition-colors flex items-center relative group" 
-                title="Mensagens"
-              >
-                <span className="material-symbols-outlined text-[26px] group-hover:scale-110 transition-transform">
-                  chat_bubble
-                </span>
-              </Link>
-
-              {/* FOTO DE PERFIL */}
-              <Link href="/profile" className="group flex items-center gap-3" title="Meu Perfil">
-                <div className="w-11 h-11 rounded-full border-2 border-blue-500 overflow-hidden bg-slate-100 transition-transform group-hover:scale-105 shadow-sm">
-                  {userData?.photoURL || user.photoURL ? (
-                    <img 
-                      src={userData?.photoURL || user.photoURL} 
-                      alt="Perfil" 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 font-bold text-lg">
-                      {user.email?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-              </Link>
-            </div>
-          ) : (
-            // MOSTRA O BOTÃO ENTRAR SE NÃO ESTIVER LOGADO
-            <Link 
-              href="/login" 
-              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-2 px-6 rounded-full hover:shadow-lg transition-all"
-            >
-              Entrar
+          {/* LINKS DESKTOP */}
+          <div className="flex items-center space-x-8">
+            <Link href="/" className="relative font-bold text-slate-800 hover:text-blue-600 transition-colors group">
+              Início
+              <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-blue-600 transition-all group-hover:w-full"></span>
             </Link>
-          )}
-        </div>
-
-        {/* BOTÃO HAMBÚRGUER, LUPA MOBILE E BOTÃO NOVO POST */}
-<div className="md:hidden flex items-center gap-2">
-  
-  <BotaoNovoPost /> {/* ✨ OLHA ELE AQUI SALVANDO O DIA ✨ */}
-  
-  <BarraPesquisa />
-  
-  <button 
-    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
-  >
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      {isMobileMenuOpen ? (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-      ) : (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-      )}
-    </svg>
-  </button>
-</div>
-
-      </nav>
-
-      {/* MENU MOBILE (Desce quando clica no hambúrguer) */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-100 bg-slate-50 px-4 pt-2 pb-6 space-y-2 shadow-inner">
-          
-          {user && (
-            <div className="flex items-center gap-3 py-4 border-b border-slate-200 mb-2">
-              <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-                <div className="w-12 h-12 rounded-full border-2 border-blue-500 overflow-hidden bg-slate-100">
-                  {userData?.photoURL || user.photoURL ? (
-                    <img src={userData?.photoURL || user.photoURL} className="w-full h-full object-cover" alt="Perfil" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 font-bold text-xl">
-                      {user.email?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-              </Link>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-800 truncate">{userData?.displayName || "Usuário"}</p>
-                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="text-xs text-blue-600 hover:underline">Ver perfil</Link>
-              </div>
+            <Link href="/atividades" className="relative font-medium text-slate-500 hover:text-blue-600 transition-colors group">
+              Atividades
+              <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-blue-600 transition-all group-hover:w-full"></span>
+            </Link>
+            <Link href="/artigos" className="relative font-medium text-slate-500 hover:text-blue-600 transition-colors group">
+              Artigos
+              <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-blue-600 transition-all group-hover:w-full"></span>
+            </Link>
+            
+            <div className="pl-4 border-l border-slate-200">
+              <BotaoNovoPost />
             </div>
-          )}
+          </div>
 
-          <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 px-4 rounded-xl text-slate-700 font-bold hover:bg-slate-200">Início</Link>
-          <Link href="/atividades" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 px-4 rounded-xl text-slate-700 font-medium hover:bg-slate-200">Atividades</Link>
-          <Link href="/artigos" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 px-4 rounded-xl text-slate-700 font-medium hover:bg-slate-200">Artigos</Link>          
-          
-          {user && (
-            <>
-              {/* BOTÃO DE NOTIFICAÇÕES MOBILE */}
-              <Link 
-                href="/notificacoes" 
-                onClick={() => setIsMobileMenuOpen(false)} 
-                className="flex items-center justify-between py-3 px-4 rounded-xl text-slate-700 font-medium hover:bg-slate-200"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[22px] text-blue-600">notifications</span>
-                  Notificações
-                </div>
-                {unreadCount > 0 && (
-                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </Link>
+          {/* ÁREA DO USUÁRIO DESKTOP */}
+          <div className="flex items-center gap-5">
+            <BarraPesquisa />
 
-              {/* BOTÃO DE MENSAGENS MOBILE */}
-              <Link 
-                href="/mensagens" 
-                onClick={() => setIsMobileMenuOpen(false)} 
-                className="flex items-center gap-3 py-3 px-4 rounded-xl text-slate-700 font-medium hover:bg-slate-200"
-              >
-                <span className="material-symbols-outlined text-[22px] text-blue-600">chat_bubble</span>
-                Mensagens
-              </Link>
-            </>
-          )}
+            {loading ? (
+              <div className="w-10 h-10 bg-slate-200 animate-pulse rounded-full"></div>
+            ) : user ? (
+              <div className="flex items-center gap-3">
+                <Link href="/notificacoes" className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-all relative">
+                  <span className="material-symbols-outlined text-[24px]">notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
 
-          <div className="pt-4 mt-2 border-t border-slate-200">
-            {user ? (
-              <button 
-                onClick={handleLogout} 
-                className="w-full text-center bg-red-100 text-red-600 font-bold py-3 rounded-xl hover:bg-red-200 transition"
-              >
-                Sair da conta
-              </button>
+                <Link href="/mensagens" className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-all">
+                  <span className="material-symbols-outlined text-[24px]">chat_bubble</span>
+                </Link>
+
+                <Link href="/profile" className="ml-2 group">
+                  <div className="w-11 h-11 rounded-full p-[2px] bg-gradient-to-tr from-blue-600 to-red-600 hover:scale-105 transition-transform shadow-sm">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-white border-2 border-white">
+                      {userData?.photoURL || user.photoURL ? (
+                        <img src={userData?.photoURL || user.photoURL} alt="Perfil" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-100 text-blue-600 font-bold text-lg">
+                          {user.email?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              </div>
             ) : (
-              <Link 
-                href="/login" 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block text-center bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-md"
-              >
+              <Link href="/login" className="bg-slate-900 text-white font-bold py-2 px-6 rounded-full hover:bg-blue-600 transition-all">
                 Entrar
               </Link>
             )}
           </div>
+        </nav>
+
+        {/* NAVEGAÇÃO DE TOPO MOBILE (Apenas Logo, Pesquisa e Ícones) */}
+        <nav className="md:hidden flex justify-between items-center px-4 py-3">
+          <Link href="/" className="text-xl font-extrabold tracking-tight">
+            <span className="text-red-600">Ativ</span>
+            <span className="text-blue-600">Adaptada</span>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <BarraPesquisa />
+            {user ? (
+              <>
+                <Link href="/notificacoes" className="text-slate-600 hover:text-blue-600 relative">
+                  <span className="material-symbols-outlined text-[26px]">notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+                <Link href="/mensagens" className="text-slate-600 hover:text-blue-600 relative">
+                  <span className="material-symbols-outlined text-[26px]">chat_bubble</span>
+                </Link>
+              </>
+            ) : (
+              <Link href="/login" className="bg-slate-900 text-white font-bold py-1.5 px-4 rounded-full text-sm">
+                Entrar
+              </Link>
+            )}
+          </div>
+        </nav>
+      </header>
+
+      {/* =========================================================
+          BARRA INFERIOR MOBILE (ESTILO INSTAGRAM/TIKTOK)
+          ========================================================= */}
+      <div className="md:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-lg border-t border-slate-200/60 z-50 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
+        <div className="flex justify-around items-center h-16 px-1 relative">
+          
+          {/* 1. INÍCIO */}
+          <Link href="/" className="flex flex-col items-center justify-center w-14 h-full text-slate-400 hover:text-blue-600 active:scale-95 transition-all group">
+            <span className="material-symbols-outlined text-[28px] group-hover:fill-current">home</span>
+            <span className="text-[10px] font-medium mt-0.5">Início</span>
+          </Link>
+
+          {/* 2. ATIVIDADES */}
+          <Link href="/atividades" className="flex flex-col items-center justify-center w-14 h-full text-slate-400 hover:text-blue-600 active:scale-95 transition-all group">
+            <span className="material-symbols-outlined text-[28px]">extension</span>
+            <span className="text-[10px] font-medium mt-0.5">Atividades</span>
+          </Link>
+
+          {/* 3. BOTÃO POSTAR CENTRAL (FLUTUANTE) */}
+          <div className="relative -top-6 flex justify-center items-center">
+            {/* Círculo branco de fundo para cortar a linha da Navbar */}
+            <div className="absolute w-[72px] h-[72px] bg-white rounded-full shadow-[0_-4px_10px_rgba(0,0,0,0.04)] -z-10"></div>
+            
+            {/* Wrapper CSS Mágico: Esconde a palavra "POSTAR" e deixa o botão redondo */}
+            <div className="[&_span.font-bold]:hidden [&_button]:w-[54px] [&_button]:h-[54px] [&_button]:p-0 [&_button]:flex [&_button]:items-center [&_button]:justify-center [&_button]:shadow-blue-500/40 [&_span.material-symbols-outlined]:text-[30px] [&_span.material-symbols-outlined]:m-0 active:scale-95 transition-transform">
+              <BotaoNovoPost />
+            </div>
+          </div>
+
+          {/* 4. ARTIGOS */}
+          <Link href="/artigos" className="flex flex-col items-center justify-center w-14 h-full text-slate-400 hover:text-blue-600 active:scale-95 transition-all group">
+            <span className="material-symbols-outlined text-[28px]">article</span>
+            <span className="text-[10px] font-medium mt-0.5">Artigos</span>
+          </Link>
+
+          {/* 5. PERFIL */}
+          {user ? (
+            <Link href="/profile" className="flex flex-col items-center justify-center w-14 h-full active:scale-95 transition-all">
+              <div className="w-7 h-7 rounded-full p-[2px] bg-gradient-to-tr from-blue-600 to-red-600">
+                <div className="w-full h-full rounded-full overflow-hidden bg-white border-2 border-white">
+                  {userData?.photoURL || user.photoURL ? (
+                    <img src={userData?.photoURL || user.photoURL} alt="Perfil" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-blue-600 font-bold text-xs">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <span className="text-[10px] font-medium text-slate-500 mt-1">Perfil</span>
+            </Link>
+          ) : (
+            <Link href="/login" className="flex flex-col items-center justify-center w-14 h-full text-slate-400 hover:text-blue-600 active:scale-95 transition-all">
+               <span className="material-symbols-outlined text-[28px]">login</span>
+               <span className="text-[10px] font-medium mt-0.5">Entrar</span>
+            </Link>
+          )}
+
         </div>
-      )}
-    </header>
+      </div>
+    </>
   );
 }

@@ -26,13 +26,6 @@ export default function PaginaCategorias() {
   return (
     <div className="bg-slate-50 min-h-screen">
       
-      {/* CABEÇALHO */}
-      <section className="bg-cyan-700 py-12 md:py-16 text-white text-center">
-        <h1 className="text-3xl md:text-5xl font-extrabold mb-4 px-4">Catálogo de Atividades</h1>
-        <p className="text-cyan-100 text-base md:text-lg max-w-2xl mx-auto px-4">
-          Selecione uma disciplina ou categoria para acessar os materiais adaptados e prontos para uso em sala de aula.
-        </p>
-      </section>
 
       {/* ÁREA DOS CARDS */}
       <main className="container mx-auto px-4 md:px-6 py-12 max-w-7xl">

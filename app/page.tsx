@@ -188,16 +188,8 @@ export default async function HomePage() {
 
   return (
     <div className="bg-slate-50 min-h-screen pb-16 font-sans">
-      <section className="pt-12 pb-10 px-4 text-center">
-        <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
-          Inspirações para sua Aula
-        </h1>
-        <p className="text-slate-500 text-lg max-w-2xl mx-auto font-medium">
-          {Object.keys(interessesUsuario).length > 0 
-            ? "Recomendações personalizadas para você com base no que você gosta." 
-            : "Explore atividades, artigos e momentos reais da sala de aula compartilhados pela nossa comunidade."}
-        </p>
-      </section>
+      <div className="h-6"></div> 
+{/* h-6 cria um espaço vertical de 24 pixels. Você pode testar h-4 (menor) ou h-8 (maior) */}
 
       <main className="container mx-auto px-4 md:px-6 max-w-[1400px]">
         {/* Passamos a lista misturada, pontuada e ordenada para o Feed */}

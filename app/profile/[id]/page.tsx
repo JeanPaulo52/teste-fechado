@@ -35,7 +35,7 @@ export default function PublicProfilePage() {
   const [seguidores, setSeguidores] = useState(0);
   const [seguindo, setSeguindo] = useState(0);
 
-  // Calcula total de posts para o design estilo Instagram
+  // Calcula total de posts para o design
   const totalPosts = activities.length + articles.length + momentos.length;
 
   // 1. Identificar usuário logado
@@ -113,17 +113,16 @@ export default function PublicProfilePage() {
         await setDoc(meuSeguindoRef, { date: Date.now() });
         await setDoc(perfilSeguidoresRef, { date: Date.now() });
 
-        // 🌟 NOVA PARTE: DISPARAR NOTIFICAÇÃO DE NOVO SEGUIDOR 🌟
+        // 🌟 NOTIFICAÇÃO DE NOVO SEGUIDOR 🌟
         await addDoc(collection(db, 'users', perfilId, 'notifications'), {
           remetenteId: usuarioLogado.uid,
           remetenteNome: usuarioLogado.displayName || "Alguém",
           remetenteFoto: usuarioLogado.photoURL || "",
           texto: "começou a seguir você.",
-          link: `/profile/${usuarioLogado.uid}`, // Direciona para o perfil de quem seguiu
+          link: `/profile/${usuarioLogado.uid}`, 
           lida: false,
           data: Date.now()
         });
-        // ==========================================================
       }
     } catch (error) {
       console.error("Erro ao seguir/deixar de seguir:", error);
@@ -133,14 +132,13 @@ export default function PublicProfilePage() {
   const handleStartChat = async () => {
     if (!usuarioLogado) return alert("Faça login para enviar mensagens");
 
-    // 1. Procurar se já existe um chat entre os dois
+    // Procurar se já existe um chat entre os dois
     const chatsRef = collection(db, 'chats');
     const q = query(chatsRef, where('participants', 'array-contains', usuarioLogado.uid));
     const querySnapshot = await getDocs(q);
     
     let chatId = null;
 
-    // Verifica se nos chats encontrados, o perfilId também é participante
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       if (data.participants.includes(perfilId)) {
@@ -149,10 +147,8 @@ export default function PublicProfilePage() {
     });
 
     if (chatId) {
-      // Se já existe, só navega
       router.push(`/mensagens/${chatId}`);
     } else {
-      // Se não existe, cria um novo "quarto" de chat
       const newChat = await addDoc(collection(db, 'chats'), {
         participants: [usuarioLogado.uid, perfilId],
         updatedAt: Date.now(),
@@ -164,147 +160,184 @@ export default function PublicProfilePage() {
 
   const eMeuPerfil = usuarioLogado?.uid === perfilId;
 
-  if (loading) return <div className="flex justify-center items-center h-screen animate-pulse text-blue-600 font-bold">Carregando Perfil...</div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    </div>
+  );
 
   return (
-    <main className="min-h-screen bg-slate-50 md:py-10 text-slate-800">
+    <main className="min-h-screen bg-slate-50 pb-24 md:pb-10 text-slate-800">
       
-      {/* Container Principal estilo Mobile/App */}
-      <div className="max-w-3xl mx-auto bg-white md:border md:border-slate-200 md:rounded-2xl overflow-hidden min-h-screen md:min-h-0 shadow-sm">
+      {/* ====================================================
+          CAPA (COVER) COM BOTÃO DE VOLTAR E IDENTIDADE VISUAL
+          ==================================================== */}
+      <div className="w-full h-48 md:h-72 bg-gradient-to-r from-blue-600 via-purple-500 to-red-600 relative overflow-hidden">
+        {/* Efeito de brilho de fundo (Glassmorphism) */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
         
-        {/* Header Superior estilo Instagram */}
-        <div className="border-b border-slate-100 p-4 sticky top-0 bg-white z-10 flex items-center gap-4">
-          <button onClick={() => router.back()} className="text-slate-600 hover:text-slate-900 transition-colors">
-            <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-          </button>
-          <h1 className="font-bold text-lg flex-1">
-            {profileData.displayName?.split(' ')[0] || "Perfil"}
-          </h1>
-          <button className="text-slate-600 hover:text-slate-900 transition-colors">
-            <span className="material-symbols-outlined text-[24px]">more_vert</span>
-          </button>
-        </div>
+        {/* Botão de Voltar Flutuante */}
+        <button 
+          onClick={() => router.back()} 
+          className="absolute top-4 left-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-3 py-2 rounded-full transition-all flex items-center gap-2 text-sm font-bold z-10 shadow-sm border border-white/20"
+        >
+          <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+          <span className="hidden sm:block">Voltar</span>
+        </button>
 
-        {/* Informações do Perfil */}
-        <div className="p-4 md:p-8">
-          <div className="flex items-center gap-6 md:gap-10">
+        {/* Botão de Opções (Visual) */}
+        <button className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white w-9 h-9 rounded-full flex items-center justify-center transition-all z-10 shadow-sm border border-white/20">
+          <span className="material-symbols-outlined text-[20px]">more_vert</span>
+        </button>
+      </div>
+
+      {/* ÁREA PRINCIPAL DO PERFIL */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 relative -mt-16 md:-mt-24">
+        
+        {/* CABEÇALHO DO PERFIL */}
+        <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-slate-100 p-6 md:p-10">
+          
+          <div className="flex flex-col md:flex-row md:items-end gap-5 md:gap-8 relative">
             
-            {/* AVATAR */}
-            <div className="relative w-20 h-20 md:w-28 md:h-28 rounded-full border border-slate-200 overflow-hidden flex-shrink-0">
-              {profileData.photoURL ? (
-                <img src={profileData.photoURL} className="w-full h-full object-cover" alt="Perfil" />
-              ) : (
-                <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                  <span className="text-3xl font-black text-slate-400">
-                    {profileData.displayName?.charAt(0).toUpperCase() || "?"}
-                  </span>
+            {/* AVATAR SOBREPOSTO */}
+            <div className="relative -mt-16 md:-mt-20 self-start md:self-auto flex-shrink-0">
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-[4px] bg-gradient-to-tr from-blue-600 to-red-600 shadow-xl">
+                <div className="w-full h-full rounded-full overflow-hidden bg-white border-4 border-white flex items-center justify-center">
+                  {profileData.photoURL ? (
+                    <img src={profileData.photoURL} className="w-full h-full object-cover" alt="Perfil" />
+                  ) : (
+                    <span className="text-4xl font-black text-slate-300">
+                      {profileData.displayName?.charAt(0).toUpperCase() || "?"}
+                    </span>
+                  )}
                 </div>
+              </div>
+            </div>
+
+            {/* INFORMAÇÕES DO USUÁRIO */}
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-950 tracking-tighter leading-tight">
+                {profileData.displayName || "Usuário"}
+              </h1>
+              
+              {profileData.bio ? (
+                <p className="text-slate-700 max-w-2xl leading-relaxed text-sm md:text-base whitespace-pre-wrap mt-2">
+                  {profileData.bio}
+                </p>
+              ) : (
+                <p className="text-slate-400 italic text-sm mt-2">Nenhuma biografia adicionada.</p>
               )}
             </div>
 
-            {/* ESTATÍSTICAS */}
-            <div className="flex-1 flex justify-around text-center">
-              <div>
-                <span className="block font-bold text-lg md:text-xl text-slate-900">{totalPosts}</span>
-                <span className="text-[11px] md:text-sm text-slate-500">Publicações</span>
+            {/* AÇÕES E ESTATÍSTICAS */}
+            <div className="flex flex-col items-start md:items-end gap-5 w-full md:w-auto mt-4 md:mt-0">
+              
+              {/* BOTÕES: SEGUIR E MENSAGEM */}
+              <div className="flex gap-3 w-full md:w-auto">
+                {eMeuPerfil ? (
+                  <Link href="/perfil" className="w-full md:w-auto bg-slate-950 text-white font-bold py-2.5 px-8 rounded-full hover:bg-slate-800 transition-colors shadow-md text-sm flex items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                    Editar Meu Perfil
+                  </Link>
+                ) : (
+                  <>
+                    <button 
+                      onClick={handleToggleFollow}
+                      className={`flex-1 md:flex-none font-bold py-2.5 px-6 rounded-full text-sm transition-all shadow-md flex items-center justify-center gap-2 ${
+                        isFollowing 
+                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200 shadow-none' 
+                          : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        {isFollowing ? 'person_check' : 'person_add'}
+                      </span>
+                      {isFollowing ? 'Seguindo' : 'Seguir'}
+                    </button>
+
+                    <button 
+                      onClick={handleStartChat}
+                      className="flex-1 md:flex-none bg-slate-950 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-full text-sm transition-colors shadow-md flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">chat</span>
+                      Mensagem
+                    </button>
+                  </>
+                )}
               </div>
-              <div>
-                <span className="block font-bold text-lg md:text-xl text-slate-900">{seguidores}</span>
-                <span className="text-[11px] md:text-sm text-slate-500">Seguidores</span>
+
+              {/* MÉTRIQUES */}
+              <div className="flex gap-6 md:gap-8 w-full justify-between md:justify-end border-t md:border-0 border-slate-100 pt-5 md:pt-0 mt-2 md:mt-0 px-2 sm:px-0">
+                <div className="flex flex-col items-center md:items-end">
+                  <span className="text-2xl font-extrabold text-slate-950 tracking-tight">{totalPosts}</span>
+                  <span className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Posts</span>
+                </div>
+                <div className="flex flex-col items-center md:items-end">
+                  <span className="text-2xl font-extrabold text-slate-950 tracking-tight">{seguidores}</span>
+                  <span className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Seguidores</span>
+                </div>
+                <div className="flex flex-col items-center md:items-end">
+                  <span className="text-2xl font-extrabold text-slate-950 tracking-tight">{seguindo}</span>
+                  <span className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Seguindo</span>
+                </div>
               </div>
-              <div>
-                <span className="block font-bold text-lg md:text-xl text-slate-900">{seguindo}</span>
-                <span className="text-[11px] md:text-sm text-slate-500">Seguindo</span>
-              </div>
+
             </div>
-          </div>
-
-          {/* NOME E BIOGRAFIA */}
-          <div className="mt-4 md:mt-6">
-            <h2 className="font-bold text-slate-900 leading-tight">{profileData.displayName || "Usuário"}</h2>
-            {profileData.bio && (
-              <p className="text-sm text-slate-700 whitespace-pre-wrap mt-1">{profileData.bio}</p>
-            )}
-          </div>
-
-          {/* BOTÕES DE AÇÃO */}
-          <div className="mt-4 flex gap-2">
-            {eMeuPerfil ? (
-              <Link href="/perfil" className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-900 text-center font-semibold py-1.5 rounded-lg text-sm transition-colors">
-                Editar Meu Perfil
-              </Link>
-            ) : (
-              <>
-                <button 
-                  onClick={handleToggleFollow}
-                  className={`flex-1 font-semibold py-1.5 rounded-lg text-sm transition-colors ${
-                    isFollowing 
-                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-900' 
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  {isFollowing ? 'Seguindo' : 'Seguir'}
-                </button>
-
-                <button 
-                  onClick={handleStartChat}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-900 font-semibold py-1.5 rounded-lg text-sm transition-colors"
-                >
-                  Mensagem
-                </button>
-              </>
-            )}
           </div>
         </div>
 
-        {/* TABS ESTILO INSTAGRAM */}
-        <div className="flex border-t border-slate-200">
+        {/* ====================================================
+            TABS (ABAS)
+            ==================================================== */}
+        <div className="flex mt-10 border-b border-slate-200 gap-1 sm:gap-4 px-1">
           <button 
             onClick={() => setActiveTab('posts')} 
-            className={`flex-1 py-3 flex items-center justify-center gap-2 transition-colors ${activeTab === 'posts' ? 'border-t-[1px] border-slate-900 text-slate-900 -mt-[1px]' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex-1 md:flex-none md:w-48 pb-4 flex items-center justify-center gap-2.5 font-bold text-sm transition-all relative group ${activeTab === 'posts' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <span className="material-symbols-outlined text-[22px]">grid_on</span>
-            <span className="text-[12px] font-semibold uppercase tracking-wider hidden sm:block">Publicações</span>
+            Publicações
+            {activeTab === 'posts' && <span className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full shadow-[0_-2px_4px_rgba(37,99,235,0.2)] animate-in fade-in"></span>}
           </button>
           
           <button 
             onClick={() => setActiveTab('favorites')} 
-            className={`flex-1 py-3 flex items-center justify-center gap-2 transition-colors ${activeTab === 'favorites' ? 'border-t-[1px] border-slate-900 text-slate-900 -mt-[1px]' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex-1 md:flex-none md:w-48 pb-4 flex items-center justify-center gap-2.5 font-bold text-sm transition-all relative group ${activeTab === 'favorites' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}
           >
-            <span className="material-symbols-outlined text-[24px]">bookmark_border</span>
-            <span className="text-[12px] font-semibold uppercase tracking-wider hidden sm:block">Salvos</span>
+            <span className="material-symbols-outlined text-[24px]">bookmark</span>
+            Salvos
+            {activeTab === 'favorites' && <span className="absolute bottom-0 left-0 w-full h-1 bg-slate-950 rounded-t-full shadow-[0_-2px_4px_rgba(0,0,0,0.1)] animate-in fade-in"></span>}
           </button>
         </div>
 
         {/* ÁREA DE CONTEÚDO */}
-        <div className="min-h-[400px] bg-slate-50 md:bg-white pb-10">
+        <div className="py-8 min-h-[400px]">
           
           {/* ABA POSTS */}
           {activeTab === 'posts' && (
-            <div className="p-1 md:p-4">
+            <div className="animate-in fade-in duration-300">
               <MinhasPostagens perfilId={perfilId} nomeUsuario={profileData.displayName || "Usuário"} />
             </div>
           )}
 
           {/* ABA FAVORITOS */}
           {activeTab === 'favorites' && (
-            <div className="p-1 md:p-4 h-full">
+            <div className="animate-in fade-in duration-300 pb-24 md:pb-0">
               {eMeuPerfil ? (
                 favorites.length === 0 ? (
-                  <div className="py-20 text-center flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-full border-2 border-slate-200 flex items-center justify-center mb-4">
-                      <span className="material-symbols-outlined text-3xl text-slate-300">bookmark_border</span>
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-24 h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-5">
+                      <span className="material-symbols-outlined text-5xl">bookmark</span>
                     </div>
-                    <p className="text-slate-500 text-sm">Nenhum favorito salvo.</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2 tracking-tight">Nada salvo ainda</h3>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 md:grid-cols-3 gap-1 md:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-1.5 md:gap-4 rounded-xl overflow-hidden md:overflow-visible p-1">
                     {favorites.map((item: any) => (
-                      <div key={item.id} className="relative group aspect-square bg-slate-100 overflow-hidden cursor-pointer">
-                        <Link href={item.url || "#"} className="block w-full h-full">
-                          <img src={item.image || "https://placehold.co/600x600/e2e8f0/475569"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
-                            <p className="text-white text-xs md:text-sm font-bold line-clamp-2">{item.title}</p>
+                      <div key={item.id} className="relative group aspect-square bg-slate-100 rounded-lg md:rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow">
+                        <Link href={item.url || "#"} className="block w-full h-full relative">
+                          <img src={item.image || "https://placehold.co/600x600/e2e8f0/475569"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Favorito" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3 md:p-4 text-left">
+                            <p className="text-white text-xs md:text-sm font-bold line-clamp-2 leading-snug">{item.title}</p>
                           </div>
                         </Link>
                       </div>
@@ -312,13 +345,14 @@ export default function PublicProfilePage() {
                   </div>
                 )
               ) : (
-                <div className="py-20 text-center flex flex-col items-center justify-center h-full">
-                  <div className="w-20 h-20 rounded-full border-2 border-slate-200 flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-4xl text-slate-300">lock</span>
+                // TELA DE BLOQUEIO DE FAVORITOS (Para visitantes)
+                <div className="flex flex-col items-center justify-center py-20 text-center animate-in zoom-in-95 duration-300">
+                  <div className="w-24 h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-5 shadow-inner">
+                    <span className="material-symbols-outlined text-5xl">lock</span>
                   </div>
-                  <h3 className="font-bold text-slate-800 text-lg">Favoritos Privados</h3>
-                  <p className="text-slate-500 text-sm mt-1">
-                    Os itens salvos por {profileData.displayName?.split(' ')[0] || "este usuário"} são ocultos.
+                  <h3 className="text-xl font-bold text-slate-900 mb-2 tracking-tight">Favoritos Privados</h3>
+                  <p className="text-slate-500 text-sm max-w-sm leading-relaxed">
+                    Os itens salvos por {profileData.displayName?.split(' ')[0] || "este usuário"} são ocultos e apenas ele tem acesso.
                   </p>
                 </div>
               )}
@@ -326,6 +360,7 @@ export default function PublicProfilePage() {
           )}
         </div>
       </div>
+
     </main>
   );
 }

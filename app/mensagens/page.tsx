@@ -29,7 +29,6 @@ export default function InboxPage() {
     const q = query(
       chatsRef, 
       where('participants', 'array-contains', user.uid)
-      // orderBy('updatedAt', 'desc') // Descomente se quiser ordenar pelos mais recentes
     );
 
     const unsubChats = onSnapshot(q, async (snap) => {
@@ -69,19 +68,21 @@ export default function InboxPage() {
   if (loading) return <div className="p-10 text-center font-bold text-blue-500 animate-pulse">Carregando mensagens...</div>;
 
   return (
-    <main className="min-h-screen bg-slate-50 md:py-10">
-      <div className="max-w-2xl mx-auto bg-white min-h-screen md:min-h-[600px] md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden">
+    // ✨ MUDANÇA 1: h-[100dvh] e flex-col na tela inteira
+    <main className="flex flex-col h-[100dvh] bg-slate-50 md:py-10 overflow-hidden">
+      
+      <div className="flex flex-col h-full max-w-2xl mx-auto w-full bg-white md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden">
         
-        {/* Header Inbox */}
-        <div className="border-b border-slate-100 p-4 sticky top-0 bg-white z-10 flex items-center gap-4">
+        {/* Header Inbox (✨ shrink-0 para não amassar) */}
+        <div className="border-b border-slate-100 p-4 bg-white shrink-0 flex items-center gap-4">
           <button onClick={() => router.back()} className="text-slate-600 hover:text-slate-900 transition-colors">
             <span className="material-symbols-outlined text-[24px]">arrow_back</span>
           </button>
           <h1 className="font-bold text-lg flex-1 text-slate-800">Mensagens</h1>
         </div>
 
-        {/* Lista de Conversas */}
-        <div className="divide-y divide-slate-100">
+        {/* Lista de Conversas (✨ flex-1 e overflow-y-auto para rolar só a lista) */}
+        <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
           {chats.length === 0 ? (
             <div className="py-20 flex flex-col items-center justify-center text-slate-500">
               <span className="material-symbols-outlined text-5xl text-slate-300 mb-4">chat_bubble</span>
@@ -114,7 +115,7 @@ export default function InboxPage() {
                   </p>
                 </div>
                 
-                {/* Ícone de Seta (estético) */}
+                {/* Ícone de Seta */}
                 <span className="material-symbols-outlined text-slate-300 group-hover:text-blue-500 transition-colors">
                   chevron_right
                 </span>
